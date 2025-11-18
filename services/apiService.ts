@@ -1,24 +1,63 @@
 import { HistoryTurn } from '../types.ts';
 
-// IMPORTANT WORKAROUND:
-// The actual API call to 'https://ai.potens.ai/api/rag-lab' is blocked by the browser's
-// CORS policy in this development environment. To allow for continued development and testing
-// of the application's UI and features, this function now returns a mock response that
-// simulates a real API call. This should be replaced with the real `fetch` call once the
-// server is configured to allow requests from this origin.
-export const fetchRoadmapAnswer = async (prompt: string, history: HistoryTurn[]): Promise<string> => {
-  return new Promise(resolve => {
-    setTimeout(() => {
-      const mockResponse = {
-        message: `This is a simulated AI response to your question: "${prompt}".\n\nI have considered the conversation history to provide this contextual answer. In a real environment, this would be a detailed roadmap. For now, here are some general tips:\n\n- **Explore:** Take diverse courses and join clubs.\n- **Network:** Talk to alumni and professors.\n- **Practice:** Work on personal projects or internships.\n\n*This mock response is for demonstration purposes due to CORS restrictions.*`,
-      };
-      resolve(mockResponse.message);
-    }, 1500); // Simulate network delay
-  });
+// Helper function to format the conversation history and the new prompt
+const formatPromptWithHistory = (prompt: string, history: HistoryTurn[]): string => {
+  const historyText = history
+    .map(turn => `User: ${turn.user}\nBot: ${turn.bot}`)
+    .join('\n\n');
+  return historyText ? `${historyText}\n\nUser: ${prompt}` : `User: ${prompt}`;
 };
 
 
-// The stats answer function remains unchanged as per the requirements.
+export const fetchRoadmapAnswer = async (prompt: string, history: HistoryTurn[]): Promise<string> => {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 60000); // 1 minute timeout
+
+  try {
+    const formattedPrompt = formatPromptWithHistory(prompt, history);
+
+    const response = await fetch('https://ai.potens.ai/api/rag-lab', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer 51376aa61986d0f2fc69468cdf386a61',
+        'Content-Type': 'application/json; charset=utf-8',
+      },
+      body: JSON.stringify({
+        uuid: 'f67cb875-e1c1-4caa-a51e-be5c10a63237',
+        prompt: formattedPrompt,
+      }),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      // Provide a more specific error for server-side issues
+      throw new Error(`API 서버 오류: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    
+    // As requested, extract the 'message' field from the JSON response.
+    if (data && typeof data.message === 'string') {
+      return data.message;
+    } else {
+      // Fallback if the response format is unexpected
+      return '응답 형식이 올바르지 않습니다. 받은 데이터: ' + JSON.stringify(data);
+    }
+
+  } catch (error: any) {
+    clearTimeout(timeoutId);
+    if (error.name === 'AbortError') {
+      return 'API 요청 시간이 1분을 초과했습니다.';
+    }
+    // This will catch CORS errors, network failures, etc.
+    return `API 호출에 실패했습니다: ${error.message}`;
+  }
+};
+
+
+// The stats answer function remains a mock as per the original requirements.
 export const fetchStatsAnswer = async (prompt: string): Promise<string> => {
   return new Promise(resolve => {
     setTimeout(() => {
