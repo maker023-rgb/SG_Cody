@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import Hub from './components/Hub';
-import Chat from './components/Chat';
-import { ChatMode } from './types';
+import Hub from './components/Hub.tsx';
+import Chat from './components/Chat.tsx';
+import { ChatMode } from './types.ts';
 
 const App = () => {
     const [currentView, setCurrentView] = useState('hub');

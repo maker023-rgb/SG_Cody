@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { CHAT_CONFIGS, HISTORY_LENGTH } from '../constants';
-import { fetchRoadmapAnswer, fetchStatsAnswer } from '../services/apiService';
-import { Message, HistoryTurn, ChatMode } from '../types';
+import { CHAT_CONFIGS, HISTORY_LENGTH } from '../constants.ts';
+import { fetchRoadmapAnswer, fetchStatsAnswer } from '../services/apiService.ts';
+import { Message, HistoryTurn, ChatMode } from '../types.ts';
 
 interface ChatProps {
     mode: ChatMode;
@@ -41,10 +41,14 @@ const Chat: React.FC<ChatProps> = ({ mode }) => {
         setIsLoading(true);
 
         let botResponseText;
-        if (mode === 'roadmap') {
-            botResponseText = await fetchRoadmapAnswer(messageText, history);
-        } else {
-            botResponseText = await fetchStatsAnswer(messageText);
+        try {
+            if (mode === 'roadmap') {
+                botResponseText = await fetchRoadmapAnswer(messageText, history);
+            } else {
+                botResponseText = await fetchStatsAnswer(messageText);
+            }
+        } catch (error: any) {
+            botResponseText = `An error occurred: ${error.message}`;
         }
         
         setIsLoading(false);

@@ -28,7 +28,7 @@ const Hub = () => {
         <div className="flex flex-col min-h-screen bg-white">
             <main className="flex-grow flex items-center justify-center p-4 md:p-8">
                 <div className="w-full max-w-4xl text-center">
-                    <h1 className="text-4xl md:text-5xl font-bold text-gray-800 mb-2">서강 커리어 플래너</h1>
+                    <h1 className="text-4xl md:text-5xl font-bold text-gray-800 mb-2">SG Cody</h1>
                     <p className="text-lg md:text-xl text-gray-500 mb-12">AI 기반 맞춤형 진로 로드맵과 객관적인 취업 통계 분석을 제공합니다</p>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">

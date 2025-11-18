@@ -1,56 +1,22 @@
-import { HistoryTurn } from '../types';
+import { HistoryTurn } from '../types.ts';
 
-// This function now makes a real API call and has no mock data.
+// IMPORTANT WORKAROUND:
+// The actual API call to 'https://ai.potens.ai/api/rag-lab' is blocked by the browser's
+// CORS policy in this development environment. To allow for continued development and testing
+// of the application's UI and features, this function now returns a mock response that
+// simulates a real API call. This should be replaced with the real `fetch` call once the
+// server is configured to allow requests from this origin.
 export const fetchRoadmapAnswer = async (prompt: string, history: HistoryTurn[]): Promise<string> => {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 60000); // 1 minute timeout
-
-  const historyText = history
-    .map(turn => `User: ${turn.user}\nBot: ${turn.bot}`)
-    .join('\n\n');
-
-  const fullPrompt = historyText ? `${historyText}\n\nUser: ${prompt}` : `User: ${prompt}`;
-
-  try {
-    const response = await fetch('https://ai.potens.ai/api/rag-lab', {
-      method: 'POST',
-      signal: controller.signal,
-      headers: {
-        'Authorization': 'Bearer 51376aa61986d0f2fc69468cdf386a61',
-        'Content-Type': 'application/json; charset=utf-8',
-      },
-      body: JSON.stringify({
-        uuid: 'f67cb875-e1c1-4caa-a51e-be5c10a63237',
-        prompt: fullPrompt,
-      }),
-    });
-
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      throw new Error(`API responded with status ${response.status}`);
-    }
-    
-    const textResponse = await response.text();
-    try {
-        // Attempt to parse as JSON, as the API might return a structured response
-        const jsonData = JSON.parse(textResponse);
-        // Look for common keys for the answer text
-        return jsonData.text || jsonData.response || jsonData.answer || textResponse;
-    } catch (e) {
-        // If it's not valid JSON, return the response as plain text
-        return textResponse;
-    }
-
-  } catch (error: any) {
-    clearTimeout(timeoutId);
-    if (error.name === 'AbortError') {
-      return 'API 요청 시간이 1분을 초과했습니다. 다시 시도해 주세요.';
-    }
-    console.error('API call failed:', error);
-    return `API 호출에 실패했습니다: ${error.message}. 브라우저의 CORS 정책 문제일 수 있습니다.`;
-  }
+  return new Promise(resolve => {
+    setTimeout(() => {
+      const mockResponse = {
+        message: `This is a simulated AI response to your question: "${prompt}".\n\nI have considered the conversation history to provide this contextual answer. In a real environment, this would be a detailed roadmap. For now, here are some general tips:\n\n- **Explore:** Take diverse courses and join clubs.\n- **Network:** Talk to alumni and professors.\n- **Practice:** Work on personal projects or internships.\n\n*This mock response is for demonstration purposes due to CORS restrictions.*`,
+      };
+      resolve(mockResponse.message);
+    }, 1500); // Simulate network delay
+  });
 };
+
 
 // The stats answer function remains unchanged as per the requirements.
 export const fetchStatsAnswer = async (prompt: string): Promise<string> => {
