@@ -16,7 +16,7 @@ export const fetchRoadmapAnswer = async (prompt: string, history: HistoryTurn[])
   try {
     const formattedPrompt = formatPromptWithHistory(prompt, history);
 
-    const response = await fetch('https://ai.potens.ai/api/rag-lab', {
+    const response = await fetch('https://ai-stage.potens.ai/api/rag-lab', {
       method: 'POST',
       headers: {
         'Authorization': 'Bearer 51376aa61986d0f2fc69468cdf386a61',

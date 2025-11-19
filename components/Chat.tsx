@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { CHAT_CONFIGS, HISTORY_LENGTH } from '../constants.ts';
 import { fetchRoadmapAnswer, fetchStatsAnswer } from '../services/apiService.ts';
@@ -7,9 +8,15 @@ interface ChatProps {
     mode: ChatMode;
 }
 
-const HomeIcon = ({ className }: { className: string }) => (
+const ArrowLeftIcon = ({ className }: { className: string }) => (
     <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+    </svg>
+);
+
+const RefreshIcon = ({ className }: { className: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
     </svg>
 );
 
@@ -19,7 +26,6 @@ const SendIcon = ({ className }: { className: string }) => (
     </svg>
 );
 
-// FIX: Explicitly type Chat component as React.FC<ChatProps> to allow for standard React props like `key`.
 const Chat: React.FC<ChatProps> = ({ mode }) => {
     const [messages, setMessages] = useState<Message[]>([]);
     const [history, setHistory] = useState<HistoryTurn[]>([]);
@@ -48,7 +54,7 @@ const Chat: React.FC<ChatProps> = ({ mode }) => {
                 botResponseText = await fetchStatsAnswer(messageText);
             }
         } catch (error: any) {
-            botResponseText = `An error occurred: ${error.message}`;
+            botResponseText = `오류가 발생했습니다: ${error.message}`;
         }
         
         setIsLoading(false);
@@ -66,80 +72,123 @@ const Chat: React.FC<ChatProps> = ({ mode }) => {
         e.preventDefault();
         handleSendMessage(inputValue);
     };
+
+    // 전체 페이지 새로고침이 아닌, 채팅 상태만 초기화하는 함수
+    const handleRefresh = () => {
+        // 사용자 확인 없이 즉시 초기화 (요청 반영)
+        setMessages([]);
+        setHistory([]);
+        setInputValue('');
+        setIsLoading(false);
+    };
     
-    const handleRecommendedClick = (question: string) => {
-        handleSendMessage(question);
+    const handleRecommendedClick = (prompt: string) => {
+        handleSendMessage(prompt);
     };
 
     return (
-        <div className="flex flex-col h-screen max-w-3xl mx-auto bg-white shadow-2xl rounded-lg">
-            <header className="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50 rounded-t-lg">
-                <h1 className="text-xl font-bold text-gray-800">{config.title}</h1>
+        <div className="flex flex-col h-screen bg-gray-100">
+            {/* Header */}
+            <header className="flex items-center justify-between px-4 py-3 bg-white shadow-sm z-10">
                 <button 
                     onClick={() => window.location.hash = 'hub'} 
-                    className="flex items-center text-sm text-indigo-600 hover:text-indigo-800 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 rounded-md p-1">
-                    <HomeIcon className="w-5 h-5 mr-1" />
-                    홈으로 돌아가기
+                    className="p-2 text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
+                    aria-label="홈으로 이동"
+                >
+                    <ArrowLeftIcon className="w-6 h-6" />
+                </button>
+                
+                <div className="text-center">
+                    <h1 className="text-[#9D2235] font-bold text-lg">{config.title}</h1>
+                    <p className="text-xs text-gray-500 font-medium">{config.subtitle}</p>
+                </div>
+
+                <button 
+                    onClick={handleRefresh}
+                    className="p-2 text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
+                    aria-label="대화 초기화"
+                >
+                    <RefreshIcon className="w-5 h-5" />
                 </button>
             </header>
 
-            <main ref={chatContainerRef} className="flex-1 p-6 overflow-y-auto space-y-6">
+            {/* Main Chat Area */}
+            <main ref={chatContainerRef} className="flex-1 overflow-y-auto p-4 space-y-6 scroll-smooth">
+                {/* Welcome Card & Recommended Chips (Only when no messages) */}
                 {messages.length === 0 && !isLoading && (
-                    <div className="p-4 bg-indigo-50 border border-indigo-200 rounded-lg">
-                        <h3 className="text-sm font-semibold text-gray-700 mb-3">추천 질문:</h3>
-                        <div className="flex flex-col space-y-2">
+                    <div className="space-y-6 mt-4 animate-fade-in-up">
+                        <div className="bg-white p-6 rounded-3xl shadow-sm mx-2 text-center border border-gray-50">
+                            <p className="text-gray-800 text-sm leading-relaxed">
+                                안녕하세요! <strong>{config.title}</strong>입니다.
+                                <br /><br />
+                                서강대 학생들을 위한 맞춤형 진로 로드맵을 안내해 드릴게요.
+                            </p>
+                        </div>
+                        
+                        <div className="flex flex-wrap justify-center gap-2 px-2">
                             {config.recommendedQuestions.map((q, i) => (
                                 <button 
                                     key={i} 
-                                    onClick={() => handleRecommendedClick(q)} 
-                                    className="w-full text-left p-3 bg-white rounded-md shadow-sm hover:bg-gray-100 transition-colors text-sm text-gray-600 border border-gray-200"
+                                    onClick={() => handleRecommendedClick(q.prompt)} 
+                                    className="flex items-center space-x-1 px-4 py-2 bg-white border border-gray-200 rounded-full shadow-sm hover:shadow-md hover:border-indigo-200 transition-all text-xs text-gray-600 active:scale-95"
                                 >
-                                    {q}
+                                    <span>{q.icon}</span>
+                                    <span>{q.label}</span>
                                 </button>
                             ))}
                         </div>
                     </div>
                 )}
 
+                {/* Messages */}
                 {messages.map((msg) => (
-                    <div key={msg.id} className={`flex items-end gap-2 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                        <div className={`max-w-md lg:max-w-lg p-3 rounded-2xl ${msg.sender === 'user' ? 'bg-indigo-500 text-white rounded-br-none' : 'bg-gray-200 text-gray-800 rounded-bl-none'}`}>
-                            <p className="text-sm whitespace-pre-wrap">{msg.text}</p>
+                    <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+                        <div className={`max-w-[85%] px-4 py-3 shadow-sm text-sm leading-relaxed
+                            ${msg.sender === 'user' 
+                                ? 'bg-[#9D2235] text-white rounded-2xl rounded-tr-sm' 
+                                : 'bg-white text-gray-800 rounded-2xl rounded-tl-sm border border-gray-100'
+                            }`}
+                        >
+                            <p className="whitespace-pre-wrap">{msg.text}</p>
                         </div>
                     </div>
                 ))}
+
+                {/* Loading Indicator */}
                 {isLoading && (
-                    <div className="flex items-end gap-2 justify-start">
-                         <div className="max-w-sm lg:max-w-md p-3 rounded-2xl bg-gray-200 text-gray-800 rounded-bl-none">
-                             <div className="flex items-center space-x-2">
-                                <div className="w-2 h-2 bg-gray-500 rounded-full animate-pulse"></div>
-                                <div className="w-2 h-2 bg-gray-500 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
-                                <div className="w-2 h-2 bg-gray-500 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
-                                <span className="text-sm text-gray-500">답변을 생성 중입니다...</span>
+                    <div className="flex justify-start animate-pulse">
+                         <div className="bg-white px-4 py-3 rounded-2xl rounded-tl-sm border border-gray-100 shadow-sm">
+                             <div className="flex items-center space-x-1">
+                                <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce"></div>
+                                <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                                <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                              </div>
                          </div>
                     </div>
                 )}
             </main>
 
-            <footer className="p-4 bg-white border-t border-gray-200 rounded-b-lg">
-                <form onSubmit={handleSubmit} className="flex items-center space-x-3">
-                    <input
-                        type="text"
-                        value={inputValue}
-                        onChange={(e) => setInputValue(e.target.value)}
-                        placeholder="메시지를 입력하세요..."
-                        className="flex-1 w-full px-4 py-2 text-sm bg-gray-100 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                        disabled={isLoading}
-                    />
-                    <button
-                        type="submit"
-                        disabled={isLoading || !inputValue.trim()}
-                        className="flex-shrink-0 w-10 h-10 bg-indigo-500 text-white rounded-full flex items-center justify-center hover:bg-indigo-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                    >
-                        <SendIcon className="w-5 h-5" />
-                    </button>
-                </form>
+            {/* Input Area */}
+            <footer className="bg-white p-3 border-t border-gray-100">
+                <div className="max-w-4xl mx-auto w-full">
+                    <form onSubmit={handleSubmit} className="relative flex items-center">
+                        <input
+                            type="text"
+                            value={inputValue}
+                            onChange={(e) => setInputValue(e.target.value)}
+                            placeholder="메시지를 입력하세요..."
+                            className="w-full pl-5 pr-12 py-3 bg-gray-50 border border-gray-200 rounded-full focus:outline-none focus:ring-1 focus:ring-[#9D2235] focus:bg-white transition-colors text-sm placeholder-gray-400"
+                            disabled={isLoading}
+                        />
+                        <button
+                            type="submit"
+                            disabled={isLoading || !inputValue.trim()}
+                            className="absolute right-2 p-2 bg-[#9D2235] text-white rounded-full hover:bg-[#8a1c2d] disabled:bg-gray-300 disabled:cursor-not-allowed transition-transform active:scale-90"
+                        >
+                            <SendIcon className="w-4 h-4 rotate-90" />
+                        </button>
+                    </form>
+                </div>
             </footer>
         </div>
     );
